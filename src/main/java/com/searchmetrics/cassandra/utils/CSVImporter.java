@@ -2,7 +2,6 @@ package com.searchmetrics.cassandra.utils;
 
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.io.sstable.CQLSSTableWriter;
-import org.apache.commons.csv.CSVFormat;
 import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,21 +68,6 @@ public class CSVImporter {
             TABLE
     );
 
-    public static final CSVFormat INPUT_FORMAT = CSVFormat.MYSQL
-            .withDelimiter(',')
-            .withEscape('\\')
-            .withHeader(CSV_HEADERS.class)
-            .withNullString("\\N")
-            .withQuote('"')
-            .withSkipHeaderRecord(false);
-
-//    public static final CQLSSTableWriter writer = CQLSSTableWriter.builder()
-//            .inDirectory("/Users/arobinson/cassandra-data/n3jobservice/jobs")
-//            .forTable(SCHEMA)
-//            .using(INSERT).build();
-
-    private static int i = 0;
-
     private static final CsvPreference CSV_PREFERENCE =
             new CsvPreference.Builder('"', ',', "\n")
                     .useQuoteMode(new AlwaysQuoteMode()).build();
@@ -97,43 +81,20 @@ public class CSVImporter {
 
         DatabaseDescriptor.clientInitialization(true);
 
+        int i = 0;
+
         try (FileReader csvInputReader = new FileReader("/Users/arobinson/jobs.csv")) {
             CsvListReader csvListReader = new CsvListReader(csvInputReader, CSV_PREFERENCE);
             List<String> csvInputList = null;
 
             while ((csvInputList = csvListReader.read()) != null) {
+
                 final List<String> parsedInputLine = csvInputList.stream()
-                        .map(s -> null != s && s.equals("\\N") ? null : s).collect(Collectors.toList());
+                        .map(s -> null != s && s.equals("\\N") ? null : s)
+                        .collect(Collectors.toList());
 
-                // generate datecreated, yyyymmcreated, datedone, yyyymmdone
-                List<String> yyyymmddCreated = converToLocalDate(parsedInputLine.get(13));
-                List<String> yyyymmddDone = converToLocalDate(parsedInputLine.get(16));
+                writer.addRow( mapToCorrectTypes(i, parsedInputLine) );
 
-                writer.addRow(
-                        Long.valueOf(parsedInputLine.get(0)),
-                        parsedInputLine.get(1),
-                        parsedInputLine.get(2),
-                        (null == parsedInputLine.get(3) ? null : Integer.valueOf(parsedInputLine.get(3))),
-                        (null == parsedInputLine.get(4) ? null : Integer.valueOf(parsedInputLine.get(4))),
-                        (null == parsedInputLine.get(5) ? null : Integer.valueOf(parsedInputLine.get(5))),
-                        parsedInputLine.get(6),
-                        parsedInputLine.get(7),
-                        (null == parsedInputLine.get(8) ? null : Integer.valueOf(parsedInputLine.get(8))),
-                        parsedInputLine.get(9),
-                        (null == parsedInputLine.get(10) ? null : Integer.valueOf(parsedInputLine.get(10))),
-                        (null == parsedInputLine.get(11) ? null : Integer.valueOf(parsedInputLine.get(11))),
-                        (null == parsedInputLine.get(12) ? null : Integer.valueOf(parsedInputLine.get(12))),
-                        (null == parsedInputLine.get(13) ? null : DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").parseDateTime(parsedInputLine.get(13)).toDate()),
-                        (null == parsedInputLine.get(14) ? null : DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").parseDateTime(parsedInputLine.get(14)).toDate()),
-                        (null == parsedInputLine.get(15) ? null : DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").parseDateTime(parsedInputLine.get(15)).toDate()),
-                        (null == parsedInputLine.get(16) ? null : DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").parseDateTime(parsedInputLine.get(16)).toDate()),
-                        parsedInputLine.get(17),
-                        (Integer.valueOf(parsedInputLine.get(18)) == 1 ? true : false),
-                        String.join("", yyyymmddCreated),
-                        String.join("", yyyymmddCreated.get(0), yyyymmddCreated.get(1)),
-                        String.join("", yyyymmddDone),
-                        String.join("", yyyymmddDone.get(0), yyyymmddDone.get(1))
-                );
                 if (++i % 100000 == 0)
                     LOGGER.info("Processed record[{}]", i);
             }
@@ -152,20 +113,10 @@ public class CSVImporter {
         System.exit(0);
     }
 
-//    private static void processRow(CSVRecord csvRecord) {
-//        final List<Object> rowData = mapToCorrectTypes(csvRecord);
-//        try {
-//            writer.addRow(rowData);
-//            if (++i % 10000 == 0)
-//                LOGGER.info("Processed record: {}", i);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            LOGGER.error("Invalid input:\n\t{}", csvRecord);
-//        }
-//    }
+    private static List<Object> mapToCorrectTypes(final int fileIdx, final List<String> values) {
+        if (LOGGER.isTraceEnabled())
+            LOGGER.debug("Fields [{}]: {}", values.size(), values);
 
-    private static Object[] mapToCorrectTypes(final List<String> values) {
-//        LOGGER.debug("Fields [{}]: {}", values.size(), values);
         final List<Object> results = new ArrayList<>();
         for (int i = 0; i < values.size(); i++) {
             Object value = null;
@@ -206,7 +157,8 @@ public class CSVImporter {
             results.add(String.join("", ymd.get(0), ymd.get(1)));
         }
         else {
-            throw new RuntimeException(String.format("createDate[%d] cannot be null: %s", i, values));
+            // cat
+            throw new RuntimeException(String.format("createDate[%d] cannot be null: %s", fileIdx + 1, values));
         }
 
         if (null != jobDone) {
@@ -218,7 +170,7 @@ public class CSVImporter {
             results.add(null); results.add(null);
         }
 
-        return results.toArray();
+        return results;
     }
 
     private static List<String> converToLocalDate(final String dateTime) {
@@ -229,12 +181,5 @@ public class CSVImporter {
         final String months = dateTime.substring(5,7);
         final String days = dateTime.substring(8,10);
         return Arrays.asList(years, months, days);
-    }
-
-    enum CSV_HEADERS {
-        ID, CRAWL_TYPE, URL, PRIORITY, MAX_PAGES, REAL_PAGES, KEYWORD_JSON,
-        SSO_JSON, ERROR_COUNT, CRAWL_STATUS, RETRIES, CRAWLER_NODE,
-        CRAWLER_PID, CREATE_DATE, LAST_CRAWL, JOB_SENT_STOP, JOB_DONE,
-        CALLBACK, USE_SM_URL_ID;
     }
 }
