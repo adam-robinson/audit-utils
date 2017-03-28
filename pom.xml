@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.searchmetrics</groupId>
+    <artifactId>cassandra-utils</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/com.datastax.cassandra/cassandra-driver-core -->
+        <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+            <version>3.1.4</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>21.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sf.supercsv</groupId>
+            <artifactId>super-csv</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sf.supercsv</groupId>
+            <artifactId>super-csv-java8</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.cassandra</groupId>
+            <artifactId>cassandra-all</artifactId>
+            <version>3.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.4</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.vafer/jdeb -->
+        <dependency>
+            <groupId>org.vafer</groupId>
+            <artifactId>jdeb</artifactId>
+            <version>1.5</version>
+        </dependency>
+
+    </dependencies>
+
+</project>
